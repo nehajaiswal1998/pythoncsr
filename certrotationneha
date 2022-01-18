@@ -1,0 +1,55 @@
+from OpenSSL import crypto, SSL
+import subprocess, os, sys
+
+# Create 'usage' portion
+# Something, blah blah, use script like this, blah blah.
+
+# Variable
+TYPE_RSA = crypto.TYPE_RSA
+
+# Generate pkey
+def generateKey(type, bits):
+
+    keyfile = 'incommon.key'
+    key = crypto.PKey()
+    key.generate_key(type, bits)
+    if os.path.exists(keyfile):
+        print("Certificate file exists, aborting.")
+        print(" ", keyfile)
+        sys.exit(1)
+    else:
+        f = open(keyfile, "wb")
+        f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
+        f.close()
+    return key
+
+# Generate CSR
+def generateCSR(nodename):
+
+    csrfile = 'incommon.csr'
+    req = crypto.X509Req()
+    # Return an X509Name object representing the subject of the certificate.
+    req.get_subject().CN = nodename
+    #req.get_subject().countryName = 'xxx'
+    #req.get_subject().stateOrProvinceName = 'xxx'
+    #req.get_subject().localityName = 'xxx'
+    #req.get_subject().organizationName = 'xxx'
+    #req.get_subject().organizationalUnitName = 'xxx'
+    # Set the public key of the certificate to pkey.
+    req.set_pubkey(key)
+    # Sign the certificate, using the key pkey and the message digest algorithm identified by the string digest.
+    req.sign(key, "sha1")
+    # Dump the certificate request req into a buffer string encoded with the type type.
+    if os.path.exists(csrfile):
+        print("Certificate file exists, aborting.")
+        print(" ", csrfile)
+        sys.exit(1)
+    else:
+        f = open('incommon.csr', "wb")
+        f.write(crypto.dump_certificate_request(crypto.FILETYPE_PEM, req))
+        f.close()
+
+#Call key & CSR functions
+key = generateKey(TYPE_RSA,2048)
+# Needs to take input from user.
+generateCSR('test.test.edu')
